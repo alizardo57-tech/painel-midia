@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrar — {{ brand_name }} | Painel LED</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at top, #1a1f2e 0%, #090b10 100%);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: #f3f4f6;
+    padding: 20px;
+  }
+  .login-card {
+    background: rgba(22, 27, 38, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 36px 32px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  }
+  .brand-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: rgba(30, 136, 229, 0.15);
+    color: #64b5f6;
+    margin-bottom: 10px;
+  }
+  .logo {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #ff5252, #fb8c00, #fdd835, #43a047, #29b6f6, #ab47bc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+  }
+  .subtitle {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #d1d5db;
+    margin-bottom: 6px;
+  }
+  .input-wrap {
+    position: relative;
+  }
+  input {
+    width: 100%;
+    padding: 12px 42px 12px 14px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid #374151;
+    background: #0f131c;
+    color: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus {
+    border-color: #29b6f6;
+  }
+  .toggle-pass {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px;
+  }
+  .err {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(229, 57, 53, 0.15);
+    border: 1px solid rgba(229, 57, 53, 0.4);
+    color: #ff8a80;
+    font-size: 13px;
+  }
+  button.submit-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #1e88e5, #1565c0);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.2s;
+  }
+  button.submit-btn:hover {
+    filter: brightness(1.1);
+  }
+  button.submit-btn:active {
+    transform: scale(0.99);
+  }
+</style>
+</head>
+<body>
+  <form class="login-card" method="post">
+    <span class="brand-badge">Controle de Painel LED</span>
+    <div style="margin: 8px 0 10px;">
+      <img src="/static/logo-shopcor.jpg" alt="{{ brand_name }}" style="height: 68px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: block;">
+    </div>
+    <div class="logo">{{ brand_name }}</div>
+    <div class="subtitle">Gerenciador de Propagandas e Vídeos</div>
+
+    <label for="senha">Senha do Administrador</label>
+    <div class="input-wrap">
+      <input type="password" id="senha" name="senha" placeholder="Digite sua senha..." autofocus required>
+      <button type="button" class="toggle-pass" onclick="const i=document.getElementById('senha');i.type=i.type==='password'?'text':'password'">👁️</button>
+    </div>
+
+    {% if err %}
+      <div class="err">⚠️ Senha incorreta. Tente novamente.</div>
+    {% endif %}
+
+    <button type="submit" class="submit-btn">Acessar Painel</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ brand_name }} — Gerenciador de Painel LED</title>
+<style>
+  :root {
+    --bg: #0f131c;
+    --card: #181e2c;
+    --card-2: #1f2738;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --blue: #29b6f6;
+    --blue-dark: #0288d1;
+    --orange: #fb8c00;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+    padding-bottom: 60px;
+  }
+  header {
+    background: #090b10;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo {
+    font-size: 24px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #ff5252, #fb8c00, #fdd835, #43a047, #29b6f6, #ab47bc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .badge-top {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: rgba(41, 182, 246, 0.15);
+    color: var(--blue);
+    font-weight: 600;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Summary Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .stat-value {
+    font-size: 26px;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+  .stat-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Buttons & Inputs */
+  button, .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    color: #fff;
+    background: var(--blue-dark);
+    transition: filter 0.15s, transform 0.1s;
+  }
+  button:hover, .btn:hover { filter: brightness(1.12); }
+  button:active, .btn:active { transform: scale(0.98); }
+  .btn-sec {
+    background: var(--card-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-danger { background: #dc2626; }
+  .btn-success { background: #16a34a; }
+  .btn-warn { background: #d97706; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+  input, select {
+    padding: 9px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    background: #0b0e15;
+    color: #fff;
+    outline: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--blue);
+  }
+  label.field-label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  /* Section Headers */
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 28px 0 14px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    padding-left: 12px;
+    border-left: 5px solid var(--blue);
+  }
+  .section-title.orange { border-left-color: var(--orange); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  /* Upload Box */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+  .file-drop {
+    grid-column: 1 / -1;
+    border: 2px dashed rgba(41, 182, 246, 0.45);
+    background: rgba(41, 182, 246, 0.05);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .file-drop:hover, .file-drop.dragover {
+    background: rgba(41, 182, 246, 0.12);
+    border-color: var(--blue);
+  }
+  .progress-wrap {
+    grid-column: 1 / -1;
+    display: none;
+    background: #0b0e15;
+    border-radius: 99px;
+    overflow: hidden;
+    height: 22px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0288d1, #22c55e);
+    transition: width 0.15s;
+  }
+  .progress-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Screens Grid */
+  .screens-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+  }
+  .screen-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .screen-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 99px;
+  }
+  .status-pill.on { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+  .status-pill.off { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  .url-box {
+    background: #0b0e15;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .url-box code {
+    color: #93c5fd;
+    word-break: break-all;
+    font-family: Consolas, monospace;
+  }
+  .playlist-box {
+    background: #111622;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    max-height: 270px;
+    overflow-y: auto;
+  }
+  .pl-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+  }
+  .pl-row:last-child { border-bottom: none; }
+  .pl-row.inactive { opacity: 0.45; }
+  .pl-info { flex: 1; min-width: 0; }
+  .pl-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pl-meta { font-size: 11px; color: var(--muted); }
+
+  /* Media Grid */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .media-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .thumb-wrap {
+    position: relative;
+    width: 100%;
+    height: 145px;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .th {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .media-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+  }
+  .media-badge.active { background: rgba(22, 163, 74, 0.88); color: #fff; }
+  .media-badge.paused { background: rgba(107, 114, 128, 0.9); color: #fff; }
+  .media-badge.expired { background: rgba(220, 38, 38, 0.9); color: #fff; }
+  .media-badge.scheduled, .media-badge.off_hours { background: rgba(217, 119, 6, 0.9); color: #fff; }
+  .kind-tag {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #e5e7eb;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .client-tag {
+    display: inline-block;
+    font-size: 11px;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.12);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .media-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .media-actions form { margin: 0; }
+
+  /* Modals */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    padding: 22px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+  }
+  .modal.wide { max-width: 820px; }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .modal-head h3 { font-size: 18px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .preview-frame-wrap {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #374151;
+  }
+  .preview-frame-wrap iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  @media (max-width: 640px) {
+    .screens-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-wrap">
+    <img src="/static/logo-shopcor.jpg" alt="{{ brand_name }}" style="height: 44px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+    <span class="logo">{{ brand_name }}</span>
+    <span class="badge-top">Painel LED de Propagandas</span>
+  </div>
+  <div class="header-actions">
+    <a href="/tvbox/download/Iniciar_Automatico_LaunchOnBoot.apk" class="btn btn-sec" style="background: #2e7d32; color: #fff;" title="App para abrir o navegador sozinho ao ligar a TV Box">⚡ Iniciar Sozinho (APK)</a>
+    <a href="/tvbox/download/AcessoRemoto_RustDesk.apk" class="btn btn-sec" style="background: #d97706; color: #fff;" title="Baixar App Acesso Remoto">📱 Acesso Remoto (APK)</a>
+    <button type="button" class="btn-sec" onclick="openModal('modalSettings')">⚙️ Senha e Empresa</button>
+    <a href="/logout" class="btn btn-sec">Sair</a>
+  </div>
+</header>
+
+<main>
+  <!-- Resumo Geral -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Painéis LED / Telas</div>
+      <div class="stat-value">{{ stats.online_screens }} / {{ stats.total_screens }}</div>
+      <div class="stat-sub">Painéis conectados agora</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Propagandas Ativas</div>
+      <div class="stat-value" style="color:#4ade80">{{ stats.active_media }}</div>
+      <div class="stat-sub">De {{ stats.total_media }} cadastradas no total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Campanhas Vencidas</div>
+      <div class="stat-value" style="color:{{ '#f87171' if stats.expired_media > 0 else '#9ca3af' }}">{{ stats.expired_media }}</div>
+      <div class="stat-sub">Saem da tela automaticamente</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Espaço em Disco</div>
+      <div class="stat-value">{{ stats.total_size }}</div>
+      <div class="stat-sub">IP da Rede: {{ local_ip }}</div>
+    </div>
+  </div>
+
+  <!-- 1. SUBIR NOVO VÍDEO / PROPAGANDA -->
+  <div class="section-head">
+    <h2 class="section-title orange">1. Subir Vídeo ou Propaganda para o Painel LED</h2>
+  </div>
+
+  <form id="uploadForm" class="card" method="post" action="/media" enctype="multipart/form-data">
+    <div class="upload-grid">
+      <div class="file-drop" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" name="file" accept="video/*,image/*" multiple required style="display:none" onchange="onFilesSelected(this.files)">
+        <div style="font-size:16px;font-weight:700;color:#60a5fa" id="fileDropTitle">
+          📹 Clique aqui ou arraste os vídeos (MP4, MOV, WEBM) ou imagens (JPG, PNG)
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="fileDropSub">
+          Você pode selecionar vários vídeos de uma só vez (até 1 GB)
+        </div>
+      </div>
+
+      <div>
+        <label class="field-label">Título da Propaganda (opcional)</label>
+        <input name="name" id="upName" placeholder="Ex: Promoção Tintas Acrílicas" style="width:100%">
+      </div>
+
+      <div>
+        <label class="field-label">Cliente / Anunciante (opcional)</label>
+        <input name="client_name" placeholder="Ex: Loja Centro / Parceiro" style="width:100%">
+      </div>
+
+      <div>
+        <label class="field-label">Tempo na tela (segundos)</label>
+        <input type="number" name="duration" id="upDuration" value="10" min="1" max="3600" style="width:100%">
+      </div>
+
+      <div>
+        <label class="field-label">Adicionar direto no Painel:</label>
+        <select name="target_screen" style="width:100%">
+          <option value="all">✅ Todos os Painéis LED</option>
+          {% for s in screens %}
+            <option value="{{ s.id }}">📺 Apenas: {{ s.name }}</option>
+          {% endfor %}
+          <option value="">Apenas salvar na biblioteca</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Início da Campanha (opcional)</label>
+        <input type="date" name="start_date" style="width:100%">
+      </div>
+
+      <div>
+        <label class="field-label">Vencimento / Fim (opcional)</label>
+        <input type="date" name="end_date" style="width:100%">
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <label class="field-label">Hora Início</label>
+          <input type="time" name="start_time" style="width:100%">
+        </div>
+        <div style="flex:1">
+          <label class="field-label">Hora Fim</label>
+          <input type="time" name="end_time" style="width:100%">
+        </div>
+      </div>
+
+      <div>
+        <button type="submit" id="btnUpload" style="width:100%;padding:11px;font-size:15px">
+          ⬆️ Enviar Propaganda
+        </button>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-text" id="progressText">Enviando... 0%</div>
+      </div>
+    </div>
+  </form>
+
+  <!-- 2. PAINÉIS DE LED / TELAS -->
+  <div class="section-head">
+    <h2 class="section-title">2. Painéis de LED e Playlists</h2>
+    <button type="button" onclick="openModal('modalNewScreen')">➕ Criar Novo Painel / Tela</button>
+  </div>
+
+  <div class="screens-grid">
+    {% for s in screens %}
+    <div class="card screen-card">
+      <div class="screen-top">
+        <div>
+          <h3 style="font-size:18px;font-weight:800">{{ s.name }}</h3>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            Ajuste: <b>{{ 'Preencher (Sem bordas)' if s.fit_mode=='cover' else ('Esticar 100%' if s.fit_mode=='fill' else 'Inteiro (Com bordas)') }}</b>
+            • Rotação: <b>{{ s.rotation }}°</b>
+            • Som: <b>{{ 'Ligado' if not s.muted else 'Mudo' }}</b>
+          </div>
+          {% if s.online and s.current_media %}
+            <div style="font-size:12px;color:#4ade80;margin-top:4px">▶️ Tocando agora: <b>{{ s.current_media }}</b></div>
+          {% endif %}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="status-pill {{ 'on' if s.online else 'off' }}" id="status-screen-{{ s.id }}">
+            ● {{ 'ONLINE' if s.online else 'OFFLINE (' ~ s.last_seen_str ~ ')' }}
+          </span>
+          <form method="post" action="/screens/{{ s.id }}/delete" style="margin:0" onsubmit="return confirm('Deseja realmente excluir o painel \'{{ s.name }}\'? Todas as mídias na playlist desta tela serão removidas.')">
+            <button type="submit" class="btn-danger btn-sm" style="padding:5px 10px;font-size:12px;display:flex;align-items:center;gap:4px" title="Excluir este painel permanentemente">
+              🗑️ Excluir Painel
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Endereço do Player -->
+      <div class="url-box">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">Link para abrir no Painel LED / TV Box:</div>
+          <code id="url-{{ s.id }}">{{ network_base }}player/{{ s.slug }}</code>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="btn-sec btn-sm" onclick="copyText('{{ network_base }}player/{{ s.slug }}')">📋 Copiar</button>
+          <button type="button" class="btn-sec btn-sm" onclick="openQrModal('{{ s.name }}', '{{ network_base }}player/{{ s.slug }}')">📱 QR</button>
+        </div>
+      </div>
+
+      <!-- Botões rápidos do Painel -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="btn-sm" onclick="openPreviewModal('{{ s.name }}', '/player/{{ s.slug }}')">
+          👁️ Ver Preview Ao Vivo
+        </button>
+        <a href="/player/{{ s.slug }}" target="_blank" class="btn btn-sec btn-sm">
+          🚀 Abrir Player em Nova Aba
+        </a>
+        <button type="button" class="btn-sec btn-sm" onclick='openScreenSettings({{ s | tojson }})'>
+          ⚙️ Configurar Tela LED
+        </button>
+        <form method="post" action="/screens/{{ s.id }}/delete" style="margin:0;display:inline" onsubmit="return confirm('Deseja realmente excluir o painel \'{{ s.name }}\'? Todas as mídias na playlist desta tela serão removidas.')">
+          <button type="submit" class="btn-danger btn-sm" title="Excluir este painel">
+            🗑️ Excluir Painel
+          </button>
+        </form>
+      </div>
+
+      <!-- Playlist da Tela -->
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-top:4px">
+        <span>Playlist ({{ s.playable_count }} ativas de {{ s.pl|length }})</span>
+        <span>Tempo total do ciclo: ~{{ s.total_duration }}s</span>
+      </div>
+
+      <div class="playlist-box">
+        {% for it in s.pl %}
+        <div class="pl-row {{ 'inactive' if it.status_code != 'active' else '' }}">
+          <div class="pl-info">
+            <div class="pl-title">{{ loop.index }}. {{ it.name }}</div>
+            <div class="pl-meta">
+              {{ '🎬 Vídeo' if it.kind=='video' else '🖼️ Imagem' }} ({{ it.duration }}s)
+              {% if it.client_name %} • 👤 {{ it.client_name }}{% endif %}
+              • <span style="color:{{ '#4ade80' if it.status_code=='active' else '#f87171' }}">{{ it.status_label }}</span>
+            </div>
+          </div>
+          <form method="post" action="/items/{{ it.id }}/toggle" title="Pausar/Ativar nesta tela">
+            <button class="btn-sec btn-sm" type="submit">{{ '⏸️' if it.item_active else '▶️' }}</button>
+          </form>
+          <form method="post" action="/items/{{ it.id }}/up" title="Subir na ordem">
+            <button class="btn-sec btn-sm" type="submit">↑</button>
+          </form>
+          <form method="post" action="/items/{{ it.id }}/down" title="Descer na ordem">
+            <button class="btn-sec btn-sm" type="submit">↓</button>
+          </form>
+          <form method="post" action="/items/{{ it.id }}/delete" title="Remover da playlist">
+            <button class="btn-danger btn-sm" type="submit">✕</button>
+          </form>
+        </div>
+        {% else %}
+        <div style="padding:18px;text-align:center;color:var(--muted);font-size:13px">
+          Playlist vazia. Adicione propagandas abaixo.
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Adicionar mídia na tela -->
+      <form style="display:flex;gap:8px" method="post" action="/screens/{{ s.id }}/add">
+        <select name="media_id" style="flex:1" required>
+          <option value="all">➕ Adicionar TODAS as mídias ativas</option>
+          {% for m in media %}
+            <option value="{{ m.id }}">{{ m.name }} ({{ 'Vídeo' if m.kind=='video' else m.duration ~ 's' }})</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-sm">Adicionar</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- 3. BIBLIOTECA DE PROPAGANDAS / MÍDIAS -->
+  <div class="section-head">
+    <h2 class="section-title orange">3. Biblioteca de Propagandas ({{ media|length }})</h2>
+    <div class="filter-bar">
+      <input type="search" id="searchInput" placeholder="🔍 Buscar por título ou cliente..." oninput="filterMedia()">
+      <select id="statusFilter" onchange="filterMedia()">
+        <option value="all">Todos os status</option>
+        <option value="active">🟢 Em exibição</option>
+        <option value="paused">⏸️ Pausadas</option>
+        <option value="expired">🔴 Vencidas</option>
+        <option value="scheduled">🟡 Agendadas</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="media-grid" id="mediaGrid">
+    {% for m in media %}
+    <div class="card media-card" data-name="{{ (m.name ~ ' ' ~ m.client_name)|lower }}" data-status="{{ m.status_code }}">
+      <div>
+        <div class="thumb-wrap">
+          {% if m.kind == 'video' %}
+            <video class="th" src="/m/{{ m.file }}#t=0.5" muted preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0.5;"></video>
+          {% else %}
+            <img class="th" src="/m/{{ m.file }}" alt="{{ m.name }}" loading="lazy">
+          {% endif %}
+          <span class="media-badge {{ m.status_code }}">{{ m.status_label }}</span>
+          <span class="kind-tag">{{ 'VÍDEO' if m.kind=='video' else 'IMAGEM' }} • {{ m.duration }}s • {{ m.size_human }}</span>
+        </div>
+
+        {% if m.client_name %}
+          <div class="client-tag">👤 {{ m.client_name }}</div>
+        {% endif %}
+        <div style="font-weight:700;font-size:15px;word-break:break-word">{{ m.name }}</div>
+
+        {% if m.start_date or m.end_date or m.start_time or m.end_time %}
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">
+            📅
+            {% if m.start_date %}De {{ m.start_date }}{% endif %}
+            {% if m.end_date %} até {{ m.end_date }}{% endif %}
+            {% if m.start_time or m.end_time %} ({{ m.start_time or '00:00' }}–{{ m.end_time or '23:59' }}){% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="media-actions">
+        <form method="post" action="/media/{{ m.id }}/toggle">
+          <button type="submit" class="btn-sm {{ 'btn-warn' if m.active else 'btn-success' }}">
+            {{ '⏸️ Pausar' if m.active else '▶️ Ativar' }}
+          </button>
+        </form>
+        <button type="button" class="btn-sec btn-sm" onclick='openEditMedia({{ m | tojson }})'>✏️ Editar</button>
+        <a href="/m/{{ m.file }}" target="_blank" class="btn btn-sec btn-sm" title="Abrir arquivo">🔍</a>
+        <form method="post" action="/media/{{ m.id }}/delete" onsubmit="return confirm('Excluir esta propaganda de todas as telas?')">
+          <button type="submit" class="btn-danger btn-sm">🗑️</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="grid-column: 1 / -1; text-align:center; padding:36px; color:var(--muted)">
+      Nenhuma propaganda enviada ainda. Use o quadro acima para enviar seu primeiro vídeo ou imagem!
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+<!-- MODAL: EDITAR PROPAGANDA -->
+<div class="modal-backdrop" id="modalEditMedia">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>✏️ Editar Propaganda</h3>
+      <button type="button" class="btn-sec btn-sm" onclick="closeModal('modalEditMedia')">✕</button>
+    </div>
+    <form id="formEditMedia" method="post">
+      <div class="form-grid">
+        <div class="full">
+          <label class="field-label">Título da Propaganda</label>
+          <input name="name" id="emName" required style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Cliente / Anunciante</label>
+          <input name="client_name" id="emClient" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Duração (segundos)</label>
+          <input type="number" name="duration" id="emDuration" min="1" max="3600" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Data de Início</label>
+          <input type="date" name="start_date" id="emStartDate" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Data de Vencimento</label>
+          <input type="date" name="end_date" id="emEndDate" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Horário Inicial</label>
+          <input type="time" name="start_time" id="emStartTime" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Horário Final</label>
+          <input type="time" name="end_time" id="emEndTime" style="width:100%">
+        </div>
+        <div class="full" style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button type="button" class="btn-sec" onclick="closeModal('modalEditMedia')">Cancelar</button>
+          <button type="submit">💾 Salvar Alterações</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: CRIAR NOVA TELA -->
+<div class="modal-backdrop" id="modalNewScreen">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>➕ Novo Painel de LED / Tela</h3>
+      <button type="button" class="btn-sec btn-sm" onclick="closeModal('modalNewScreen')">✕</button>
+    </div>
+    <form method="post" action="/screens">
+      <div class="form-grid">
+        <div class="full">
+          <label class="field-label">Nome do Painel / Tela</label>
+          <input name="name" placeholder="Ex: Painel LED Fachada Rua" required style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Preenchimento da Tela</label>
+          <select name="fit_mode" style="width:100%">
+            <option value="cover">Preencher sem bordas (Cover)</option>
+            <option value="fill">Esticar 100% no LED (Fill)</option>
+            <option value="contain">Mostrar inteiro com bordas (Contain)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Orientação / Rotação</label>
+          <select name="rotation" style="width:100%">
+            <option value="0">0° — Horizontal (Normal)</option>
+            <option value="90">90° — Vertical (Em pé)</option>
+            <option value="270">270° — Vertical Invertido</option>
+            <option value="180">180° — De cabeça para baixo</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Áudio dos Vídeos</label>
+          <select name="sound" style="width:100%">
+            <option value="0">🔇 Sem som (Painel LED Externo)</option>
+            <option value="1">🔊 Com som ativado</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Transição entre vídeos</label>
+          <select name="transition" style="width:100%">
+            <option value="fade">Suave (Fade)</option>
+            <option value="none">Corte seco (Direto)</option>
+          </select>
+        </div>
+        <div class="full" style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button type="button" class="btn-sec" onclick="closeModal('modalNewScreen')">Cancelar</button>
+          <button type="submit">Criar Painel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: CONFIGURAR TELA EXISTENTE -->
+<div class="modal-backdrop" id="modalScreenSettings">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>⚙️ Configurar Painel de LED</h3>
+      <button type="button" class="btn-sec btn-sm" onclick="closeModal('modalScreenSettings')">✕</button>
+    </div>
+    <form id="formScreenSettings" method="post">
+      <div class="form-grid">
+        <div class="full">
+          <label class="field-label">Nome do Painel / Tela</label>
+          <input name="name" id="scName" required style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Preenchimento da Tela</label>
+          <select name="fit_mode" id="scFit" style="width:100%">
+            <option value="cover">Preencher sem bordas (Cover)</option>
+            <option value="fill">Esticar 100% no LED (Fill)</option>
+            <option value="contain">Mostrar inteiro com bordas (Contain)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Orientação / Rotação</label>
+          <select name="rotation" id="scRot" style="width:100%">
+            <option value="0">0° — Horizontal (Normal)</option>
+            <option value="90">90° — Vertical (Em pé)</option>
+            <option value="270">270° — Vertical Invertido</option>
+            <option value="180">180° — De cabeça para baixo</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Áudio dos Vídeos</label>
+          <select name="sound" id="scSound" style="width:100%">
+            <option value="0">🔇 Sem som (Mudo)</option>
+            <option value="1">🔊 Com som ativado</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Transição entre vídeos</label>
+          <select name="transition" id="scTrans" style="width:100%">
+            <option value="fade">Suave (Fade)</option>
+            <option value="none">Corte seco (Direto)</option>
+          </select>
+        </div>
+        <div class="full">
+          <label class="field-label">Resolução de Referência (informativo)</label>
+          <input name="resolution" id="scRes" placeholder="Ex: 1920x1080 ou 960x540" style="width:100%">
+        </div>
+        <div class="full" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <button type="button" class="btn-danger btn-sm" id="btnDeleteScreen">🗑️ Excluir Tela</button>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn-sec" onclick="closeModal('modalScreenSettings')">Cancelar</button>
+            <button type="submit">💾 Salvar Configurações</button>
+          </div>
+        </div>
+      </div>
+    </form>
+    <form id="formDeleteScreen" method="post" style="display:none"></form>
+  </div>
+</div>
+
+<!-- MODAL: PREVIEW AO VIVO -->
+<div class="modal-backdrop" id="modalPreview">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3 id="previewTitle">👁️ Preview Ao Vivo</h3>
+      <button type="button" class="btn-sec btn-sm" onclick="closePreviewModal()">✕ Fechar</button>
+    </div>
+    <div class="preview-frame-wrap">
+      <iframe id="previewFrame" src="about:blank" allow="autoplay; fullscreen"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QR CODE / LINK -->
+<div class="modal-backdrop" id="modalQr">
+  <div class="modal" style="text-align:center;max-width:400px">
+    <div class="modal-head">
+      <h3 id="qrTitle">📱 Conectar TV Box / Celular</h3>
+      <button type="button" class="btn-sec btn-sm" onclick="closeModal('modalQr')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      Aponte a câmera ou abra o link abaixo no navegador da TV Box ou PC do Painel LED:
+    </p>
+    <div style="background:#fff;padding:16px;border-radius:12px;display:inline-block;margin-bottom:12px">
+      <img id="qrImg" src="" alt="QR Code" style="width:200px;height:200px;display:block">
+    </div>
+    <div class="url-box" style="margin-bottom:12px">
+      <code id="qrUrlText" style="width:100%;text-align:center"></code>
+    </div>
+    <button type="button" onclick="copyText(document.getElementById('qrUrlText').textContent)" style="width:100%">
+      📋 Copiar Endereço
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: CONFIGURAÇÕES DO SISTEMA (SENHA E MARCA) -->
+<div class="modal-backdrop" id="modalSettings">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>⚙️ Configurações do Sistema</h3>
+      <button type="button" class="btn-sec btn-sm" onclick="closeModal('modalSettings')">✕</button>
+    </div>
+    <form method="post" action="/settings">
+      <div class="form-grid">
+        <div class="full">
+          <label class="field-label">Nome da Empresa / Painel</label>
+          <input name="brand_name" value="{{ brand_name }}" required style="width:100%">
+        </div>
+        <div class="full">
+          <label class="field-label">Nova Senha de Administrador (deixe em branco para manter a atual)</label>
+          <input type="password" name="new_password" placeholder="Digite a nova senha..." style="width:100%">
+        </div>
+        <div class="full" style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button type="button" class="btn-sec" onclick="closeModal('modalSettings')">Cancelar</button>
+          <button type="submit">💾 Salvar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openModal(id) {
+  document.getElementById(id).classList.add("open");
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+}
+
+function copyText(txt) {
+  navigator.clipboard.writeText(txt).then(() => {
+    alert("Endereço copiado: " + txt);
+  }).catch(() => {
+    prompt("Copie o endereço abaixo:", txt);
+  });
+}
+
+function openPreviewModal(name, url) {
+  document.getElementById("previewTitle").textContent = "👁️ Preview Ao Vivo — " + name;
+  document.getElementById("previewFrame").src = url;
+  openModal("modalPreview");
+}
+function closePreviewModal() {
+  document.getElementById("previewFrame").src = "about:blank";
+  closeModal("modalPreview");
+}
+
+function openQrModal(name, url) {
+  document.getElementById("qrTitle").textContent = "📱 " + name;
+  document.getElementById("qrUrlText").textContent = url;
+  document.getElementById("qrImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(url);
+  openModal("modalQr");
+}
+
+function openEditMedia(m) {
+  document.getElementById("formEditMedia").action = "/media/" + m.id + "/edit";
+  document.getElementById("emName").value = m.name || "";
+  document.getElementById("emClient").value = m.client_name || "";
+  document.getElementById("emDuration").value = m.duration || 10;
+  document.getElementById("emStartDate").value = m.start_date || "";
+  document.getElementById("emEndDate").value = m.end_date || "";
+  document.getElementById("emStartTime").value = m.start_time || "";
+  document.getElementById("emEndTime").value = m.end_time || "";
+  openModal("modalEditMedia");
+}
+
+function openScreenSettings(s) {
+  document.getElementById("formScreenSettings").action = "/screens/" + s.id + "/settings";
+  document.getElementById("scName").value = s.name || "";
+  document.getElementById("scFit").value = s.fit_mode || "cover";
+  document.getElementById("scRot").value = s.rotation || 0;
+  document.getElementById("scSound").value = s.muted ? "0" : "1";
+  document.getElementById("scTrans").value = s.transition || "fade";
+  document.getElementById("scRes").value = s.resolution || "1920x1080";
+
+  const btnDel = document.getElementById("btnDeleteScreen");
+  btnDel.onclick = () => {
+    if (confirm("Deseja realmente excluir a tela '" + s.name + "'?")) {
+      const f = document.getElementById("formDeleteScreen");
+      f.action = "/screens/" + s.id + "/delete";
+      f.submit();
+    }
+  };
+  openModal("modalScreenSettings");
+}
+
+// Auto-detect video duration when selecting file
+function onFilesSelected(files) {
+  if (!files || !files.length) return;
+  const titleEl = document.getElementById("fileDropTitle");
+  if (files.length === 1) {
+    titleEl.textContent = "✅ Arquivo selecionado: " + files[0].name;
+    const upName = document.getElementById("upName");
+    if (!upName.value) {
+      upName.value = files[0].name.replace(/\.[^/.]+$/, "");
+    }
+    if (files[0].type.startsWith("video/")) {
+      const vid = document.createElement("video");
+      vid.preload = "metadata";
+      vid.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(vid.src);
+        if (vid.duration && isFinite(vid.duration)) {
+          document.getElementById("upDuration").value = Math.max(1, Math.round(vid.duration));
+        }
+      };
+      vid.src = URL.createObjectURL(files[0]);
+    }
+  } else {
+    titleEl.textContent = "✅ " + files.length + " arquivos selecionados para envio";
+  }
+}
+
+// Drag & Drop support
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+["dragenter", "dragover"].forEach(evt => {
+  dropZone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+});
+["dragleave", "drop"].forEach(evt => {
+  dropZone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+  });
+});
+dropZone.addEventListener("drop", e => {
+  if (e.dataTransfer.files && e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    onFilesSelected(fileInput.files);
+  }
+});
+
+// AJAX Upload with Real Progress Bar
+document.getElementById("uploadForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  if (!fileInput.files.length) {
+    alert("Selecione pelo menos um vídeo ou imagem primeiro.");
+    return;
+  }
+  const formData = new FormData(this);
+  const xhr = new XMLHttpRequest();
+  const progressWrap = document.getElementById("progressWrap");
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+  const btnUpload = document.getElementById("btnUpload");
+
+  progressWrap.style.display = "block";
+  btnUpload.disabled = true;
+  btnUpload.textContent = "⏳ Enviando...";
+
+  xhr.upload.onprogress = function(ev) {
+    if (ev.lengthComputable) {
+      const pct = Math.round((ev.loaded / ev.total) * 100);
+      progressBar.style.width = pct + "%";
+      progressText.textContent = "Enviando para o Painel... " + pct + "%";
+    }
+  };
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      progressBar.style.width = "100%";
+      progressText.textContent = "✅ Concluído! Atualizando...";
+      window.location.reload();
+    } else {
+      let msg = "Erro ao enviar arquivo.";
+      try {
+        const res = JSON.parse(xhr.responseText);
+        if (res.error) msg = res.error;
+      } catch (err) {}
+      alert(msg);
+      btnUpload.disabled = false;
+      btnUpload.textContent = "⬆️ Enviar Propaganda";
+      progressWrap.style.display = "none";
+    }
+  };
+  xhr.onerror = function() {
+    alert("Falha de conexão durante o envio.");
+    btnUpload.disabled = false;
+    btnUpload.textContent = "⬆️ Enviar Propaganda";
+    progressWrap.style.display = "none";
+  };
+  xhr.open("POST", "/media", true);
+  xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  xhr.send(formData);
+});
+
+// Filter media library
+function filterMedia() {
+  const q = (document.getElementById("searchInput").value || "").toLowerCase();
+  const st = document.getElementById("statusFilter").value;
+  document.querySelectorAll("#mediaGrid .media-card").forEach(card => {
+    const nameMatch = card.dataset.name.includes(q);
+    const statusMatch = (st === "all") || (card.dataset.status === st);
+    card.style.display = (nameMatch && statusMatch) ? "flex" : "none";
+  });
+}
+</script>
+</body>
+</html>
