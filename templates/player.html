@@ -137,6 +137,8 @@
     <img id="imB" class="media-layer" alt="">
     <video id="vdA" class="media-layer" playsinline preload="auto"></video>
     <video id="vdB" class="media-layer" playsinline preload="auto"></video>
+    <iframe id="hmA" class="media-layer" style="border:0;" scrolling="no"></iframe>
+    <iframe id="hmB" class="media-layer" style="border:0;" scrolling="no"></iframe>
 
     <div id="msg">
       <img src="/static/logo-shopcor.jpg" alt="{{ brand_name }}" style="height: 90px; border-radius: 12px; margin-bottom: 14px; box-shadow: 0 8px 25px rgba(0,0,0,0.6);">
@@ -171,7 +173,9 @@ const layers = {
   imA: document.getElementById("imA"),
   imB: document.getElementById("imB"),
   vdA: document.getElementById("vdA"),
-  vdB: document.getElementById("vdB")
+  vdB: document.getElementById("vdB"),
+  hmA: document.getElementById("hmA"),
+  hmB: document.getElementById("hmB")
 };
 
 let activeLayer = null;
@@ -367,6 +371,19 @@ function nextItem() {
       timer = setTimeout(nextItem, 1500);
     };
     imgEl.src = mediaUrl;
+  } else if (it.kind === "html") {
+    const frameEl = useBufferA ? layers.hmA : layers.hmB;
+    let shown = false;
+    const show = () => {
+      if (shown) return;
+      shown = true;
+      activateLayer(frameEl);
+      timer = setTimeout(nextItem, Math.max(1, it.duration || 15) * 1000);
+    };
+    frameEl.onload = show;
+    // Garante que a página aparece mesmo se o onload não disparar (TV Box)
+    watchdog = setTimeout(show, 4000);
+    frameEl.src = mediaUrl;
   } else {
     // If single video in playlist and already playing same video, loop smoothly
     if (list.length === 1 && activeLayer && activeLayer.tagName === "VIDEO" && activeLayer.dataset.rawUrl === it.url) {
