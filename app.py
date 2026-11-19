@@ -22,8 +22,16 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "painel-led-secret-key-shop-cor-2026")
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024  # 1 GB max upload
 
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 VIDEO = {".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv"}
 IMAGE = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
+HTML = {".html", ".htm"}
 
 
 def db():
@@ -69,6 +77,36 @@ def init_db():
             pos INTEGER,
             active INTEGER DEFAULT 1
         );
+        
+        CREATE TABLE IF NOT EXISTS leads(
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            phone TEXT,
+            email TEXT DEFAULT '',
+            source TEXT DEFAULT 'whatsapp',
+            status TEXT DEFAULT 'novo',
+            value REAL DEFAULT 0,
+            items_text TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at REAL DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS orders(
+            id INTEGER PRIMARY KEY,
+            order_code TEXT UNIQUE,
+            customer_name TEXT,
+            customer_phone TEXT,
+            customer_address TEXT DEFAULT '',
+            payment_method TEXT DEFAULT 'pix',
+            shipping_method TEXT DEFAULT 'Entrega',
+            shipping_cost REAL DEFAULT 0,
+            subtotal REAL DEFAULT 0,
+            discount REAL DEFAULT 0,
+            total REAL DEFAULT 0,
+            status TEXT DEFAULT 'pendente',
+            items_json TEXT DEFAULT '[]',
+            created_at REAL DEFAULT 0
+        );
+
         CREATE TABLE IF NOT EXISTS settings(
             key TEXT PRIMARY KEY,
             value TEXT
@@ -108,6 +146,31 @@ def init_db():
             c.execute("ALTER TABLE items ADD COLUMN active INTEGER DEFAULT 1")
 
         # Create default screen if none exists
+        
+        # Seed realistic CRM leads if empty
+        if c.execute("SELECT COUNT(*) FROM leads").fetchone()[0] == 0:
+            now = time.time()
+            sample_leads = [
+                ("Clodoaldo Pintor", "(19) 99841-2233", "whatsapp", "novo", 180.0, "1x Massa Corrida Lukscolor 18L + 2x Rolo Lã", "Pediu preço pelo WhatsApp às 14:20", now - 3600),
+                ("Juliana M. Fachada", "(19) 98765-4321", "instagram", "novo", 650.0, "Tinta Emborrachada Fachada 18L", "Veio de anúncio Instagram Limeira", now - 7200),
+                ("Funilaria Alemão", "(19) 99234-5678", "whatsapp", "qualificado", 510.0, "3x Autoluks PU Preto Cadillac + Primer Rápido", "Mandou áudio de 28s transcrito pelo Whisper", now - 1800),
+                ("Carlos Eduardo Eng.", "(19) 98112-9988", "site", "qualificado", 1140.0, "Kit Pintura Interna: 2x 18L Tradição + Selador", "Montou kit no site para obra em Cordeirópolis", now - 5400),
+                ("Marcelo Acabamentos", "(19) 99345-6789", "whatsapp", "orcamento", 890.0, "Orçamento completo faturado para 15 dias", "Aguardando aprovação do cliente dele", now - 14400),
+                ("Lucas Ferreira", "(19) 98822-1144", "site", "aguardando", 554.31, "Pedido #SC-4821: 1x Tradição 18L Semibrilho + 2x Rolo", "Chave Pix gerada no checkout do site", now - 900),
+                ("Pinturas Silva & Filhos", "(19) 99765-1122", "whatsapp", "fechado", 1480.0, "4x 18L Tradição Branco Neve + Fitas", "Venda fechada, motorista saiu para entrega", now - 28800)
+            ]
+            c.executemany("INSERT INTO leads(name, phone, source, status, value, items_text, notes, created_at) VALUES(?,?,?,?,?,?,?,?)", sample_leads)
+
+        # Seed realistic orders if empty
+        if c.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 0:
+            now = time.time()
+            sample_orders = [
+                ("SC-4821", "Lucas Ferreira", "(19) 98822-1144", "Rua Santa Cruz, 450 - Centro, Limeira/SP", "pix", "Entrega Expressa Shop Cor (Limeira)", 0.0, 554.31, 0.0, 554.31, "pago", now - 900),
+                ("SC-4820", "Oficina Auto Rápido", "(19) 99112-3344", "Retirada no Balcão da Loja Física", "entrega", "Retirada na Loja Física (Limeira)", 0.0, 280.0, 0.0, 280.0, "separacao", now - 7200),
+                ("SC-4819", "Condomínio Campinas", "(19) 97123-5566", "Av. Brasil, 1200 - Campinas/SP", "cartao", "Transportadora Rodoviária Jadlog", 38.0, 654.0, 0.0, 692.0, "em_rota", now - 21600)
+            ]
+            c.executemany("INSERT INTO orders(order_code, customer_name, customer_phone, customer_address, payment_method, shipping_method, shipping_cost, subtotal, discount, total, status, created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", sample_orders)
+
         count_screens = c.execute("SELECT COUNT(*) FROM screens").fetchone()[0]
         if count_screens == 0:
             c.execute(
@@ -322,8 +385,20 @@ def admin():
     }
     brand_name = get_setting("brand_name", "Shop Cor Tintas")
 
+    with db() as c:
+        crm_leads = [dict(r) for r in c.execute("SELECT * FROM leads ORDER BY id DESC").fetchall()]
+        recent_orders = [dict(r) for r in c.execute("SELECT * FROM orders ORDER BY id DESC").fetchall()]
+    crm_stats = {
+        "total_leads": len(crm_leads),
+        "pipeline_value": sum(float(l.get("value") or 0) for l in crm_leads),
+        "total_orders": len(recent_orders),
+        "orders_revenue": sum(float(o.get("total") or 0) for o in recent_orders if o.get("status") in ["pago", "separacao", "em_rota", "entregue"])
+    }
     return render_template(
         "admin.html",
+        crm_leads=crm_leads,
+        recent_orders=recent_orders,
+        crm_stats=crm_stats,
         media=media,
         screens=screens,
         base=request.host_url,
@@ -358,9 +433,9 @@ def upload():
             if not f or not f.filename:
                 continue
             ext = os.path.splitext(f.filename)[1].lower()
-            kind = "video" if ext in VIDEO else "image" if ext in IMAGE else None
+            kind = "video" if ext in VIDEO else "image" if ext in IMAGE else "html" if ext in HTML else None
             if not kind:
-                msg = f"Formato '{ext}' não suportado. Use MP4, WEBM, MOV, JPG, PNG, GIF ou WEBP."
+                msg = f"Formato '{ext}' não suportado. Use MP4, WEBM, MOV, JPG, PNG, GIF, WEBP ou HTML."
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return jsonify({"error": msg}), 400
                 return msg, 400
@@ -677,6 +752,247 @@ def tvbox_downloads():
 def tvbox_file(f):
     apk_dir = os.path.join(BASE, "sistema-tvbox-mxq4k", "instalar-no-pendrive")
     return send_from_directory(apk_dir, f, as_attachment=True)
+
+
+
+# ==========================================
+# ROTAS DO E-COMMERCE & LOJA VIRTUAL
+# ==========================================
+@app.route("/loja")
+@app.route("/loja/")
+def loja_home():
+    loja_dir = os.path.join(BASE, "loja_static")
+    if os.path.exists(os.path.join(loja_dir, "index.html")):
+        return send_from_directory(loja_dir, "index.html")
+    return "Loja em manutenção", 404
+
+@app.route("/loja/<path:filename>")
+def loja_static_files(filename):
+    loja_dir = os.path.join(BASE, "loja_static")
+    return send_from_directory(loja_dir, filename)
+
+@app.route("/api/catalog")
+@app.route("/api/catalog.json")
+@app.route("/loja/api/catalog")
+@app.route("/loja/api/catalog.json")
+def serve_catalog():
+    loja_dir = os.path.join(BASE, "loja_static")
+    for f in ["catalog.json", "catalog"]:
+        p = os.path.join(loja_dir, "api", f)
+        if os.path.exists(p):
+            return send_from_directory(os.path.join(loja_dir, "api"), f, mimetype="application/json")
+    return jsonify({"items": [], "version": "1.0"})
+
+# ==========================================
+# ROTAS DE PEDIDOS (E-COMMERCE CHECKOUT)
+# ==========================================
+@app.route("/api/orders", methods=["GET", "POST"])
+def handle_orders():
+    if request.method == "POST":
+        data = request.get_json(silent=True) or request.form.to_dict()
+        code = data.get("order_code") or f"SC-{secrets.randbelow(9000)+1000}"
+        total = float(data.get("total", 0))
+        cust_name = data.get("customer_name") or data.get("name") or "Cliente Site"
+        cust_phone = data.get("customer_phone") or data.get("phone") or ""
+        cust_addr = data.get("customer_address") or data.get("address") or ""
+        pay_method = data.get("payment_method") or "pix"
+        ship_method = data.get("shipping_method") or "Entrega"
+        ship_cost = float(data.get("shipping_cost", 0))
+        subtotal = float(data.get("subtotal", total))
+        discount = float(data.get("discount", 0))
+
+        with db() as c:
+            c.execute("""
+                INSERT INTO orders(order_code, customer_name, customer_phone, customer_address, payment_method, shipping_method, shipping_cost, subtotal, discount, total, status, created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+            """, (code, cust_name, cust_phone, cust_addr, pay_method, ship_method, ship_cost, subtotal, discount, total, "pendente", time.time()))
+            
+            # Auto-insert into CRM Leads
+            c.execute("""
+                INSERT INTO leads(name, phone, source, status, value, items_text, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?)
+            """, (cust_name, cust_phone, "site", "aguardando", total, f"Pedido #{code}", f"Endereço: {cust_addr}", time.time()))
+
+        return jsonify({"status": "ok", "order_code": code})
+
+    with db() as c:
+        orders = [dict(r) for r in c.execute("SELECT * FROM orders ORDER BY id DESC").fetchall()]
+    return jsonify({"orders": orders})
+
+@app.route("/api/orders/<int:order_id>/status", methods=["POST"])
+@auth
+def update_order_status(order_id):
+    data = request.get_json(silent=True) or request.form.to_dict()
+    st = data.get("status", "pendente")
+    with db() as c:
+        c.execute("UPDATE orders SET status=? WHERE id=?", (st, order_id))
+    return jsonify({"status": "ok"})
+
+# ==========================================
+# ROTAS DO CRM KANBAN
+# ==========================================
+@app.route("/api/crm/leads", methods=["GET", "POST"])
+@auth
+def handle_crm_leads():
+    if request.method == "POST":
+        data = request.get_json(silent=True) or request.form.to_dict()
+        with db() as c:
+            c.execute("""
+                INSERT INTO leads(name, phone, email, source, status, value, items_text, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (
+                data.get("name", "Novo Lead"),
+                data.get("phone", ""),
+                data.get("email", ""),
+                data.get("source", "whatsapp"),
+                data.get("status", "novo"),
+                float(data.get("value", 0)),
+                data.get("items_text", ""),
+                data.get("notes", ""),
+                time.time()
+            ))
+        return jsonify({"status": "ok"})
+
+    with db() as c:
+        leads = [dict(r) for r in c.execute("SELECT * FROM leads ORDER BY id DESC").fetchall()]
+    return jsonify({"leads": leads})
+
+@app.route("/api/crm/leads/<int:lead_id>/status", methods=["POST"])
+@auth
+def move_crm_lead(lead_id):
+    data = request.get_json(silent=True) or request.form.to_dict()
+    new_status = data.get("status", "novo")
+    with db() as c:
+        c.execute("UPDATE leads SET status=? WHERE id=?", (new_status, lead_id))
+    return jsonify({"status": "ok"})
+
+@app.route("/api/crm/leads/<int:lead_id>/delete", methods=["POST"])
+@auth
+def delete_crm_lead(lead_id):
+    with db() as c:
+        c.execute("DELETE FROM leads WHERE id=?", (lead_id,))
+    return jsonify({"status": "ok"})
+
+# Webhook para n8n integration
+@app.route("/api/n8n/webhook", methods=["POST"])
+def n8n_webhook():
+    data = request.get_json(silent=True) or {}
+    action = data.get("action", "lead_create")
+    with db() as c:
+        if action == "lead_create":
+            c.execute("""
+                INSERT INTO leads(name, phone, source, status, value, items_text, notes, created_at)
+                VALUES(?,?,?,?,?,?,?,?)
+            """, (
+                data.get("name", "Lead WhatsApp"),
+                data.get("phone", ""),
+                data.get("source", "whatsapp"),
+                data.get("status", "qualificado"),
+                float(data.get("value", 0)),
+                data.get("items_text", ""),
+                data.get("notes", "Recebido via n8n SDR"),
+                time.time()
+            ))
+        elif action == "lead_status" and "lead_id" in data:
+            c.execute("UPDATE leads SET status=? WHERE id=?", (data.get("status", "qualificado"), data["lead_id"]))
+    return jsonify({"status": "ok", "received": True})
+
+
+# ==========================================
+# ROTAS DO APLICATIVO DE CONTROLE DE ENTREGAS & ROTAS (GPS / MOTORISTAS)
+# ==========================================
+@app.route("/rotas")
+@app.route("/entregas")
+def controle_rotas():
+    return render_template("controle_rotas.html")
+
+
+# ==========================================
+# SIMULADOR PÚBLICO DO SDR WHATSAPP (SEM LOGIN - PARA TESTES EXTERNOS)
+# ==========================================
+@app.route("/simulador")
+@app.route("/teste-sdr")
+def simulador_publico():
+    return render_template("simulador_sdr.html")
+
+
+# ==========================================
+# MOTOR DE VOZ IA (VOZ NEURAL BRASILEIRA NATURAL + ELEVENLABS CLONE)
+# ==========================================
+TTS_CACHE_DIR = os.path.join(BASE, "static", "tts_cache")
+os.makedirs(TTS_CACHE_DIR, exist_ok=True)
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "sk_6519acd093df59dc63582e6fcc018fde221734ccd9df6920")
+CLONED_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
+
+VOICE_CONFIGS = {
+    "francisca": ("pt-BR-FranciscaNeural", "+6%", "+0Hz"),
+    "thalita": ("pt-BR-ThalitaMultilingualNeural", "+6%", "+0Hz"),
+    "antonio": ("pt-BR-AntonioNeural", "+6%", "+0Hz")
+}
+
+@app.route("/api/tts", methods=["GET", "POST"])
+def get_tts_audio():
+    import hashlib, re
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        text = data.get("text", "")
+        vchoice = data.get("voice", "francisca").lower()
+    else:
+        text = request.args.get("text", "")
+        vchoice = request.args.get("voice", "francisca").lower()
+    
+    text = text.strip()
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+        
+    clean_text = re.sub(r'<[^>]+>', ' ', text).strip()
+    voice_key = vchoice if vchoice in VOICE_CONFIGS else "francisca"
+    voice_name, voice_rate, voice_pitch = VOICE_CONFIGS[voice_key]
+    
+    voice_tag = CLONED_VOICE_ID if (CLONED_VOICE_ID and voice_key == "clone") else voice_name
+    h = hashlib.md5((clean_text + voice_tag + voice_rate).encode('utf-8')).hexdigest()
+    filename = f"{h}.mp3"
+    filepath = os.path.join(TTS_CACHE_DIR, filename)
+    
+    if not os.path.exists(filepath):
+        success = False
+        # 1. Se o usuario solicitar clone e houver voz ativa no ElevenLabs
+        if voice_key == "clone" and CLONED_VOICE_ID and ELEVENLABS_API_KEY:
+            try:
+                import requests
+                url = f"https://api.elevenlabs.io/v1/text-to-speech/{CLONED_VOICE_ID}"
+                headers = {
+                    "xi-api-key": ELEVENLABS_API_KEY,
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "text": clean_text,
+                    "model_id": "eleven_multilingual_v2",
+                    "voice_settings": {
+                        "stability": 0.55,
+                        "similarity_boost": 0.85
+                    }
+                }
+                r = requests.post(url, headers=headers, json=payload, timeout=12)
+                if r.status_code == 200 and len(r.content) > 1000:
+                    with open(filepath, "wb") as f:
+                        f.write(r.content)
+                    success = True
+            except Exception as e:
+                print(f"ElevenLabs TTS erro: {e}")
+
+        # 2. Vozes Neurais Brasileiras de Alta Fidelidade (Microsoft Neural pt-BR)
+        if not success:
+            try:
+                import asyncio, edge_tts
+                async def run_tts():
+                    comm = edge_tts.Communicate(clean_text, voice_name, rate=voice_rate, pitch=voice_pitch)
+                    await comm.save(filepath)
+                asyncio.run(run_tts())
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+            
+    return send_from_directory(TTS_CACHE_DIR, filename, mimetype="audio/mpeg")
 
 
 if __name__ == "__main__":
